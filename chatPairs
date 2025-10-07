@@ -1,0 +1,37 @@
+const queue = [];
+const pairs = new Map();
+
+async function findPartner(jid) {
+    if (queue.includes(jid) || pairs.has(jid)) return null;
+
+    if (queue.length > 0) {
+        const partner = queue.shift();
+        pairs.set(jid, partner);
+        pairs.set(partner, jid);
+        return partner;
+    } else {
+        queue.push(jid);
+        return null;
+    }
+}
+
+function exitChat(jid) {
+    const partner = pairs.get(jid);
+    if (partner) {
+        pairs.delete(jid);
+        pairs.delete(partner);
+        return partner;
+    }
+    return null;
+}
+
+async function forwardMessage(sock, jid, text) {
+    const partner = pairs.get(jid);
+    if (partner) {
+        await sock.sendMessage(partner, { text });
+    } else {
+        await sock.sendMessage(jid, { text: '❌ Du bist mit niemandem verbunden. Sende !find.' });
+    }
+}
+
+module.exports = { findPartner, exitChat, forwardMessage };
